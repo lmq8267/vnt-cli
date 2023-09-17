@@ -79,6 +79,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.c8 }}
+          body: |
+           这个是使用重定向域名的vnt-cli 
+           特别修改版
+           正常使用的不要下载这个
+           前往vnt那个仓库下载
           tag_name: ${{ needs.check.outputs.ver }}
           files: |
               /opt/vnt-mipsel/vnt-cli
