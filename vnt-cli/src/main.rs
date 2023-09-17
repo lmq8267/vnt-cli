@@ -1,11 +1,11 @@
 use std::io;
-use std::net::{Ipv4Addr, ToSocketAddrs};
+use std::net::{Ipv4Addr, ToSocketAddrs, TcpStream};
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use console::style;
 use getopts::Options;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, BufReader, Read};
 use tokio::signal;
 
 use common::args_parse::{ips_parse, out_ips_parse};
@@ -136,7 +136,27 @@ fn main() {
     let server_address_str = matches
         .opt_get_default("s", "nat1.wherewego.top:29872".to_string())
         .unwrap();
-    let server_address = match server_address_str.to_socket_addrs() {
+    let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
+    let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
+    stream.write(request.as_bytes()).unwrap();
+    let mut buf = [0; 1024];
+    stream.read(&mut buf).unwrap();
+    let response = String::from_utf8_lossy(&buf[..]);
+    let server_add = match response.lines().find(|line| line.starts_with("Location:")) {
+        Some(location) => location
+                                 .replace("Location: http://", "")
+                                 .replace("Location: https://", "")
+                                 .replace("/", "")
+                                 .trim()
+                                 .to_string(),
+        None => {
+            eprintln!("Unable to retrieve location for {}", server_address_str);
+            std::process::exit(1);
+        }
+    };
+
+    println!("server_add: {}", server_add);
+    let server_address = match server_add.to_socket_addrs() {
         Ok(mut addr) => {
             if let Some(addr) = addr.next() {
                 addr
