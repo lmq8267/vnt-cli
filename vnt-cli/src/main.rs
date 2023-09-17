@@ -1,11 +1,11 @@
-use std::io;
+use std::io::Read;
 use std::net::{Ipv4Addr, ToSocketAddrs, TcpStream};
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use console::style;
 use getopts::Options;
-use tokio::io::{AsyncBufReadExt, BufReader, Read};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::signal;
 
 use common::args_parse::{ips_parse, out_ips_parse};
@@ -161,12 +161,12 @@ fn main() {
             if let Some(addr) = addr.next() {
                 addr
             } else {
-                println!("parameter '-s {}' error .", server_address_str);
+                println!("parameter '-s {}' error .", server_add);
                 return;
             }
         }
         Err(e) => {
-            println!("parameter '-s {}' error {}.", server_address_str, e);
+            println!("parameter '-s {}' error {}.", server_add, e);
             return;
         }
     };
