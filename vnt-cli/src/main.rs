@@ -137,7 +137,7 @@ fn main() {
     let server_address_str = matches
         .opt_get_default("s", "nat1.wherewego.top:29872".to_string())
         .unwrap();
-    let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
+    let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
     let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
     stream.write(request.as_bytes()).unwrap();
     let mut buf = [0; 1024];
@@ -151,12 +151,12 @@ fn main() {
                                  .trim()
                                  .to_string(),
         None => {
-            eprintln!("Unable to retrieve location for {}", server_address_str);
-            std::process::exit(1);
+            eprintln!("无法解析出location地址 {}", server_address_str);
+            let mut add = String::from("nat1.wherewego.top:29872");
         }
     };
 
-    println!("server_add: {}", server_add);
+    println!("当前服务器地址: {}", server_add);
     let server_address = match server_add.to_socket_addrs() {
         Ok(mut addr) => {
             if let Some(addr) = addr.next() {
