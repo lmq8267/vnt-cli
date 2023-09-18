@@ -111,12 +111,12 @@ let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
                                  .trim()
                                  .to_string(),
         None => {
-            eprintln!("Unable to retrieve location for {}", server_address_str);
-            std::process::exit(1);
+            eprintln!("无法解析出location笛子 {}", server_address_str);
+            let mut server_add = String::from("nat1.wherewego.top:29872");
         }
     };
 
-    println!("server_add: {}", server_add);
+    println!("当前服务器地址: {}", server_add);
     let server_address = match server_add.to_socket_addrs() {
         Ok(mut rs) => {
             if let Some(addr) = rs.next() {
