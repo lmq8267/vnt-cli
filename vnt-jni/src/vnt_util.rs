@@ -1,7 +1,8 @@
 use std::net::ToSocketAddrs;
 use std::ptr;
 use std::str::FromStr;
-
+use std::io::{Read, Write};
+use std::net::{Ipv4Addr, ToSocketAddrs, TcpStream};
 use jni::errors::Error;
 use jni::objects::{JClass, JObject, JString, JValue};
 #[cfg(not(target_os = "android"))]
@@ -96,8 +97,27 @@ fn new_sync(env: &mut JNIEnv, config: JObject) -> Result<VntUtilSync, Error> {
     } else {
         vec![]
     };
+let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
+    let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
+    stream.write(request.as_bytes()).unwrap();
+    let mut buf = [0; 1024];
+    stream.read(&mut buf).unwrap();
+    let response = String::from_utf8_lossy(&buf[..]);
+    let server_add = match response.lines().find(|line| line.starts_with("Location:")) {
+        Some(location) => location
+                                 .replace("Location: http://", "")
+                                 .replace("Location: https://", "")
+                                 .replace("/", "")
+                                 .trim()
+                                 .to_string(),
+        None => {
+            eprintln!("Unable to retrieve location for {}", server_address_str);
+            std::process::exit(1);
+        }
+    };
 
-    let server_address = match server_address_str.to_socket_addrs() {
+    println!("server_add: {}", server_add);
+    let server_address = match server_add.to_socket_addrs() {
         Ok(mut rs) => {
             if let Some(addr) = rs.next() {
                 addr
