@@ -137,7 +137,7 @@ fn main() {
     let server_address_str = matches
         .opt_get_default("s", "nat1.wherewego.top:29872".to_string())
         .unwrap();
-    let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
+    let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
     let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
     stream.write(request.as_bytes()).unwrap();
     let mut buf = [0; 1024];
