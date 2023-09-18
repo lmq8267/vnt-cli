@@ -143,7 +143,7 @@ async fn start_heartbeat_(
                                  .to_string(),
         None => {
             eprintln!("无法解析出location地址 {}", server_address_str);
-            let server_add = "nat1.wherewego.top:29872";
+            server_add = server_address_str;
         }
     };
 
