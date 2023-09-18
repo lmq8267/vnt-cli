@@ -127,7 +127,7 @@ async fn start_heartbeat_(
             let _ = sender.send_main_udp(packet.buffer(), current_dev.connect_server);
         }
         if count % 20 == 19 {
-             let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
+             let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
     let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
     stream.write(request.as_bytes()).unwrap();
     let mut buf = [0; 1024];
