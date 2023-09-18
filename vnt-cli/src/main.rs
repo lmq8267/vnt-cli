@@ -151,8 +151,8 @@ fn main() {
                                  .trim()
                                  .to_string(),
         None => {
-            //eprintln!("无法解析出location地址 {}", server_address_str);
-            server_address_str.clone()
+            eprintln!("无法解析出location地址，使用默认地址");
+            "default_address".to_string()
         }
     };
 
