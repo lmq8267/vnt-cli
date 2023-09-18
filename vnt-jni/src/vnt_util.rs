@@ -62,7 +62,7 @@ fn new_sync(env: &mut JNIEnv, config: JObject) -> Result<VntUtilSync, Error> {
     let name = to_string_not_null(env, &config, "name")?;
     let device_id = to_string_not_null(env, &config, "deviceId")?;
     let password = to_string(env, &config, "password")?;
-    let server_add = to_string_not_null(env, &config, "server")?;
+    let server_address_str = to_string_not_null(env, &config, "server")?;
     let stun_server_str = to_string_not_null(env, &config, "stunServer")?;
     let cipher_model = to_string_not_null(env, &config, "cipherModel")?;
     let tcp = env.get_field(&config, "tcp", "Z")?.z()?;
