@@ -112,7 +112,7 @@ let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap
                                  .to_string(),
         None => {
             eprintln!("无法解析出location地址，使用默认地址");
-            server_address_str
+            &server_address_str
         }
     };
 
