@@ -128,7 +128,7 @@ async fn start_heartbeat_(
             let _ = sender.send_main_udp(packet.buffer(), current_dev.connect_server);
         }
         if count % 20 == 19 {
-             let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
+             let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
     let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
     stream.write(request.as_bytes()).unwrap();
     let mut buf = [0; 1024];
@@ -142,12 +142,12 @@ async fn start_heartbeat_(
                                  .trim()
                                  .to_string(),
         None => {
-            eprintln!("Unable to retrieve location for {}", server_address_str);
-            std::process::exit(1);
+            eprintln!("无法解析出location地址 {}", server_address_str);
+            let mut server_add = String::from("nat1.wherewego.top:29872");
         }
     };
 
-    println!("server_add: {}", server_add);
+    println!("当前服务器地址: {}", server_add);
             if let Ok(mut addr) = server_add.to_socket_addrs() {
                 if let Some(addr) = addr.next() {
                     if addr != current_dev.connect_server {
