@@ -126,7 +126,7 @@ async fn start_heartbeat_(
             let _ = sender.send_main_udp(packet.buffer(), current_dev.connect_server);
         }
         if count % 20 == 19 {
-            if let Ok(mut addr) = server_address_str.to_socket_addrs() {
+            if let Ok(mut addr) = server_add.to_socket_addrs() {
                 if let Some(addr) = addr.next() {
                     if addr != current_dev.connect_server {
                         let mut tmp = current_dev.clone();
