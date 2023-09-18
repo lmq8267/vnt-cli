@@ -554,6 +554,7 @@ pub struct Config {
     pub device_id: String,
     pub name: String,
     pub server_address: SocketAddr,
+    pub server_add: String,
     pub server_address_str: String,
     pub stun_server: Vec<String>,
     pub in_ips: Vec<(u32, u32, Ipv4Addr)>,
