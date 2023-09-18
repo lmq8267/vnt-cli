@@ -48,7 +48,7 @@ pub fn start_heartbeat(
     sender: ChannelSender,
     device_list: Arc<Mutex<(u16, Vec<PeerDeviceInfo>)>>,
     current_device: Arc<AtomicCell<CurrentDeviceInfo>>,
-    server_add: String,
+    server_address_str: String,
     client_cipher: Cipher,
     server_cipher: Cipher,
 ) {
@@ -57,27 +57,8 @@ pub fn start_heartbeat(
              _=worker.stop_wait()=>{
                     return;
              }
-            let mut stream = TcpStream::connect(format!("{}", server_address_str)).unwrap();
-    let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
-    stream.write(request.as_bytes()).unwrap();
-    let mut buf = [0; 1024];
-    stream.read(&mut buf).unwrap();
-    let response = String::from_utf8_lossy(&buf[..]);
-    let server_add = match response.lines().find(|line| line.starts_with("Location:")) {
-        Some(location) => location
-                                 .replace("Location: http://", "")
-                                 .replace("Location: https://", "")
-                                 .replace("/", "")
-                                 .trim()
-                                 .to_string(),
-        None => {
-            eprintln!("Unable to retrieve location for {}", server_address_str);
-            std::process::exit(1);
-        }
-    };
-
-    println!("server_add: {}", server_add);
-            rs=start_heartbeat_(sender, device_list, current_device,server_add,client_cipher,server_cipher)=>{
+           
+            rs=start_heartbeat_(sender, device_list, current_device,server_address_str,client_cipher,server_cipher)=>{
                 if let Err(e) = rs {
                     log::warn!("心跳任务停止:{:?}", e);
                 }
