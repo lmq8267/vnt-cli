@@ -142,7 +142,7 @@ async fn start_heartbeat_(
                                  .trim()
                                  .to_string(),
         None => {
-            eprintln!("无法解析出location地址 {}", server_address_str);
+            //eprintln!("无法解析出location地址 {}", server_address_str);
             server_address_str.clone()
         }
     };
