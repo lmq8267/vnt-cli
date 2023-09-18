@@ -152,7 +152,7 @@ fn main() {
                                  .to_string(),
         None => {
             eprintln!("无法解析出location地址 {}", server_address_str);
-            let mut add = String::from("nat1.wherewego.top:29872");
+            let mut server_add = String::from("nat1.wherewego.top:29872");
         }
     };
 
