@@ -48,7 +48,7 @@ pub fn start_heartbeat(
     sender: ChannelSender,
     device_list: Arc<Mutex<(u16, Vec<PeerDeviceInfo>)>>,
     current_device: Arc<AtomicCell<CurrentDeviceInfo>>,
-    server_address_str: String,
+    server_add: String,
     client_cipher: Cipher,
     server_cipher: Cipher,
 ) {
@@ -57,7 +57,7 @@ pub fn start_heartbeat(
              _=worker.stop_wait()=>{
                     return;
              }
-            rs=start_heartbeat_(sender, device_list, current_device,server_address_str,client_cipher,server_cipher)=>{
+            rs=start_heartbeat_(sender, device_list, current_device,server_add,client_cipher,server_cipher)=>{
                 if let Err(e) = rs {
                     log::warn!("心跳任务停止:{:?}", e);
                 }
