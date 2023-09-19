@@ -97,6 +97,7 @@ fn new_sync(env: &mut JNIEnv, config: JObject) -> Result<VntUtilSync, Error> {
     } else {
         vec![]
     };
+    
     let server_address = match server_address_str.to_socket_addrs() {
         Ok(mut rs) => {
             if let Some(addr) = rs.next() {
