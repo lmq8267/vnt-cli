@@ -128,27 +128,7 @@ async fn start_heartbeat_(
             let _ = sender.send_main_udp(packet.buffer(), current_dev.connect_server);
         }
         if count % 20 == 19 {
-             let mut stream = TcpStream::connect(format!("{}:80", server_address_str)).unwrap();
-    let request = format!("HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n", server_address_str);
-    stream.write(request.as_bytes()).unwrap();
-    let mut buf = [0; 1024];
-    stream.read(&mut buf).unwrap();
-    let response = String::from_utf8_lossy(&buf[..]);
-    let server_add = match response.lines().find(|line| line.starts_with("Location:")) {
-        Some(location) => location
-                                 .replace("Location: http://", "")
-                                 .replace("Location: https://", "")
-                                 .replace("/", "")
-                                 .trim()
-                                 .to_string(),
-        None => {
-            eprintln!("无法解析出location地址，使用默认地址");
-            &server_address_str
-        }
-    };
-
-    println!("当前服务器地址: {}", server_add);
-            if let Ok(mut addr) = server_add.to_socket_addrs() {
+            if let Ok(mut addr) = server_address_str.to_socket_addrs() {
                 if let Some(addr) = addr.next() {
                     if addr != current_dev.connect_server {
                         let mut tmp = current_dev.clone();
