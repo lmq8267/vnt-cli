@@ -54,8 +54,8 @@ jobs:
           linker = "mipsel-linux-musl-gcc"
           rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols","--cfg","aes_armv8"]
           EOF
-          #git clone https://github.com/lmq8267/vnt-cli.git /opt/vnt
-          git clone https://github.com/lbl8603/vnt -b ${{ needs.check.outputs.ver }} /opt/vnt
+          git clone https://github.com/lmq8267/vnt-cli.git /opt/vnt
+          #git clone https://github.com/lbl8603/vnt -b ${{ needs.check.outputs.ver }} /opt/vnt
           git clone https://github.com/lmq8267/cloudflared.git /opt/st
           tar -xvf /opt/st/upx-3.95-amd64_linux.tar.xz -C /opt
           chmod 777 /opt/upx-3.95-amd64_linux/upx
