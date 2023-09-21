@@ -156,7 +156,7 @@ fn main() {
         }
     };
     println!("当前服务器地址: {}", server_add);
-    let server_address = match server_address_str.to_socket_addrs() {
+    let server_address = match server_add.to_socket_addrs() {
         Ok(mut addr) => {
             if let Some(addr) = addr.next() {
                 addr
