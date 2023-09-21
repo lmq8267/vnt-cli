@@ -52,7 +52,7 @@ jobs:
           cat >>~/.cargo/config <<EOF
           [target.mipsel-unknown-linux-musl]
           linker = "mipsel-linux-musl-gcc"
-          rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+          rustflags = rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols","--cfg","aes_armv8"]
           EOF
           git clone https://github.com/lmq8267/vnt-cli.git /opt/vnt
           #git clone https://github.com/lbl8603/vnts -b $vntsv /opt/vnts
@@ -62,7 +62,7 @@ jobs:
           chmod 777 /opt/st/strip
           mkdir -p /opt/vnt-mipsel
           cd /opt/vnt
-          cargo build --package vnt-cli --target=mipsel-unknown-linux-musl --release
+          cargo build --package vnt-cli --target=mipsel-unknown-linux-musl --release --features normal
           cp -f /opt/vnt/target/mipsel-unknown-linux-musl/release/vnt-cli /opt/vnt-mipsel/vnt-cli
           #cd /opt/vnts
           #cargo build --release --verbose --target mipsel-unknown-linux-musl --features normal
