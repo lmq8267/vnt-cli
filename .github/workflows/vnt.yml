@@ -58,6 +58,14 @@ jobs:
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored,wss
             STRIP: mips-linux-musl-strip
+          - TARGET: i686-unknown-linux-musl
+            OS: ubuntu-latest
+            FEATURES: ring-cipher,openssl-vendored,wss
+            STRIP: i686-linux-musl-strip
+          - TARGET: x86_64-unknown-linux-musl
+            OS: ubuntu-latest
+            FEATURES: ring-cipher,openssl-vendored,wss
+            STRIP: x86_64-linux-musl-strip
     runs-on: ${{ matrix.OS }}
     env:
       NAME: vnt-cli_${{ matrix.TARGET }}
@@ -95,6 +103,12 @@ jobs:
               mips-unknown-linux-musl)
                 MUSL_URI=mips-linux-musl-cross
                 ;;
+              i686-unknown-linux-musl)
+                MUSL_URI=i686-linux-musl-cross
+                ;;
+              x86_64-unknown-linux-musl)
+                MUSL_URI=x86_64-linux-musl-cross
+                ;;
             esac
               echo "MUSL_URI=${MUSL_URI}" >> $GITHUB_ENV
               mkdir -p /opt/musl_gcc 
@@ -107,6 +121,10 @@ jobs:
             fi
             sudo timedatectl set-timezone "Asia/Shanghai"
             cat >>~/.cargo/config <<EOF
+            [target.i686-unknown-linux-musl]
+            linker = "i686-linux-musl-gcc"
+            [target.x86_64-unknown-linux-musl]
+            linker = "x86_64-linux-musl-gcc"
             [target.aarch64-unknown-linux-musl]
             linker = "aarch64-linux-musl-gcc"
             rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
