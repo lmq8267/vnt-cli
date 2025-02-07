@@ -88,6 +88,8 @@ jobs:
          push: true
          tags: |
           docker.io/lmq8267/vnt:${{ env.tags }}
+          docker.io/lmq8267/vnt:latest
+          ghcr.io/${{ github.actor }}/vnt:${{ env.tags }}
           ghcr.io/${{ github.actor }}/vnt:latest
          platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6
          context: /opt/vnt
