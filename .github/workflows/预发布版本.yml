@@ -40,6 +40,10 @@ jobs:
             OS: ubuntu-latest
             FEATURES: openssl-vendored
             STRIP: armv7m-linux-musleabi-strip
+          - TARGET: armv7-unknown-linux-gnueabihf
+            OS: ubuntu-latest
+            FEATURES: ring-cipher,openssl-vendored,wss
+            STRIP: /opt/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-strip
           - TARGET: arm-unknown-linux-musleabihf
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored
@@ -87,6 +91,10 @@ jobs:
               armv7-unknown-linux-musleabi)
                 MUSL_URI=armv7m-linux-musleabi-cross
                 ;;
+              armv7-unknown-linux-gnueabihf)
+                wget -q -c https://github.com/lmq8267/vnt/releases/download/1.2.1/armada370-gcc493_glibc220_hard-GPL.txz -P /opt/
+                tar -Jxf /opt/armada370-gcc493_glibc220_hard-GPL.txz -C /opt/
+                ;;
               arm-unknown-linux-musleabihf)
                 MUSL_URI=arm-linux-musleabihf-cross
                 ;;
@@ -129,6 +137,9 @@ jobs:
             [target.armv7-unknown-linux-musleabi]
             linker = "armv7m-linux-musleabi-gcc"
             rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.armv7-unknown-linux-gnueabihf]
+            linker = "/opt/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc"
+            rustflags = ["-C", "strip=symbols"]
             [target.arm-unknown-linux-musleabihf]
             linker = "arm-linux-musleabihf-gcc"
             rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
@@ -169,28 +180,32 @@ jobs:
       - name: 打包压缩
         run: |
           mkdir -p /opt/upx
-          mv /opt/vnt/target/${TARGET}/release/vnt-cli /opt/upx/${NAME}
-          cd /opt/upx
-          /opt/musl_gcc/${{ env.MUSL_URI }}/bin/${STRIP} ${NAME}
-          upx --lzma --best ${NAME}
-          if [[ $TARGET == arm-unknown-linux-musleabi ]]; then
-          cd /opt/vnt
-          cargo clean
-          wget -q -c https://github.com/lmq8267/vnt-cli/releases/download/Armada370-ToolChain/ddwrt-arm_cortex-a9_gcc-13.1.0_musl_eabi.tar.gz -P /opt/musl_gcc/
-          tar zxf /opt/musl_gcc/ddwrt-arm_cortex-a9_gcc-13.1.0_musl_eabi.tar.gz -C /opt/musl_gcc/
-          export PATH=$PATH:/opt/musl_gcc/toolchain-arm_cortex-a9_gcc-13.1.0_musl_eabi/bin
-          echo "" > ~/.cargo/config
-          cat >>~/.cargo/config <<EOF
-          [target.arm-unknown-linux-musleabi]
-          linker = "arm-openwrt-linux-muslgnueabi-gcc"
-          rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
-          EOF
-          cmd=$(echo $cmd | tr -d ' ')
-          cargo build --package vnt-cli --release --target arm-unknown-linux-musleabi --features ring-cipher,openssl-vendored${cmd}
-          mv /opt/vnt/target/arm-unknown-linux-musleabi/release/vnt-cli /opt/upx/vnt-cli_ddwrt-arm_cortex-a9
-          cd /opt/upx
-          arm-openwrt-linux-muslgnueabi-strip vnt-cli_ddwrt-arm_cortex-a9
-          upx --lzma --best vnt-cli_ddwrt-arm_cortex-a9
+          if [ "$TARGET" = "armv7-unknown-linux-gnueabihf" ] ; then  
+            mv /opt/vnt/target/${TARGET}/release/vnt-cli /opt/upx/vnt-cli-synology-DS_213j
+          else
+            mv /opt/vnt/target/${TARGET}/release/vnt-cli /opt/upx/${NAME}
+            cd /opt/upx
+            /opt/musl_gcc/${{ env.MUSL_URI }}/bin/${STRIP} ${NAME}
+            upx --lzma --best ${NAME}
+            if [[ $TARGET == arm-unknown-linux-musleabi ]]; then
+            cd /opt/vnt
+            cargo clean
+            wget -q -c https://github.com/lmq8267/vnt-cli/releases/download/Armada370-ToolChain/ddwrt-arm_cortex-a9_gcc-13.1.0_musl_eabi.tar.gz -P /opt/musl_gcc/
+            tar zxf /opt/musl_gcc/ddwrt-arm_cortex-a9_gcc-13.1.0_musl_eabi.tar.gz -C /opt/musl_gcc/
+            export PATH=$PATH:/opt/musl_gcc/toolchain-arm_cortex-a9_gcc-13.1.0_musl_eabi/bin
+            echo "" > ~/.cargo/config
+            cat >>~/.cargo/config <<EOF
+            [target.arm-unknown-linux-musleabi]
+            linker = "arm-openwrt-linux-muslgnueabi-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            EOF
+            cmd=$(echo $cmd | tr -d ' ')
+            cargo build --package vnt-cli --release --target arm-unknown-linux-musleabi --features ring-cipher,openssl-vendored${cmd}
+            mv /opt/vnt/target/arm-unknown-linux-musleabi/release/vnt-cli /opt/upx/vnt-cli_ddwrt-arm_cortex-a9
+            cd /opt/upx
+            arm-openwrt-linux-muslgnueabi-strip vnt-cli_ddwrt-arm_cortex-a9
+            upx --lzma --best vnt-cli_ddwrt-arm_cortex-a9
+            fi
           fi
           echo "build_time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
       - name: 发布
