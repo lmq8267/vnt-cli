@@ -98,10 +98,6 @@ jobs:
               armv7-unknown-linux-musleabi)
                 MUSL_URI=armv7m-linux-musleabi-cross
                 ;;
-              armv7-unknown-linux-gnueabihf)
-                wget -q -c https://github.com/lmq8267/vnt/releases/download/1.2.1/armada370-gcc493_glibc220_hard-GPL.txz -P /opt/
-                tar -Jxf /opt/armada370-gcc493_glibc220_hard-GPL.txz -C /opt/
-                ;;
               arm-unknown-linux-musleabihf)
                 MUSL_URI=arm-linux-musleabihf-cross
                 ;;
@@ -120,9 +116,14 @@ jobs:
             esac
               echo "MUSL_URI=${MUSL_URI}" >> $GITHUB_ENV
               mkdir -p /opt/musl_gcc 
+              if [ "$TARGET" = "armv7-unknown-linux-gnueabihf" ] ; then
+                wget -q -c https://github.com/lmq8267/vnt/releases/download/1.2.1/armada370-gcc493_glibc220_hard-GPL.txz -P /opt/
+                tar -Jxf /opt/armada370-gcc493_glibc220_hard-GPL.txz -C /opt/
+              else
               wget -c https://musl.cc/$MUSL_URI.tgz -P /opt/musl_gcc/
               tar zxf /opt/musl_gcc/$MUSL_URI.tgz -C /opt/musl_gcc/
               sudo ln -s /opt/musl_gcc/$MUSL_URI/bin/*gcc /usr/bin/
+              fi
             if [[ $TARGET == mips-unknown-linux-musl ]] || [[ $TARGET == mipsel-unknown-linux-musl ]] ; then
             rustup install 1.72.1
             rustup default 1.72.1
@@ -188,10 +189,10 @@ jobs:
             export PATH=$PATH:/opt/musl_gcc/toolchain-arm_cortex-a9_gcc-13.1.0_musl_eabi/bin
             echo "" > ~/.cargo/config
             cat >>~/.cargo/config <<EOF
-            [target.arm-unknown-linux-musleabi]
-            linker = "arm-openwrt-linux-muslgnueabi-gcc"
-            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
-            EOF
+          [target.arm-unknown-linux-musleabi]
+          linker = "arm-openwrt-linux-muslgnueabi-gcc"
+          rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+          EOF
             cargo build --package vnt-cli --release --target arm-unknown-linux-musleabi --features ring-cipher,openssl-vendored,wss
             mv /opt/vnt/target/arm-unknown-linux-musleabi/release/vnt-cli /opt/upx/vnt-cli_ddwrt-arm_cortex-a9
             cd /opt/upx
