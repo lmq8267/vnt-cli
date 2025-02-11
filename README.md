@@ -6,6 +6,7 @@
 <a href="https://github.com/vnt-dev/vnt/releases"><img src="https://img.shields.io/github/downloads/vnt-dev/vnt/total?logo=github&label=%E4%B8%8B%E8%BD%BD%E9%87%8F"></a>
 <a href="https://github.com/vnt-dev/vnt/graphs/contributors"><img src="https://img.shields.io/github/contributors-anon/vnt-dev/vnt?logo=github&label=%E8%B4%A1%E7%8C%AE%E8%80%85"></a>
 <a href="https://github.com/vnt-dev/vnt/releases/"><img src="https://img.shields.io/github/release/vnt-dev/vnt?logo=github&label=%E7%A8%B3%E5%AE%9A%E7%89%88"></a>
+  <a href="https://github.com/vnt-dev/vnt/releases/"><img src="https://img.shields.io/github/v/tag/vnt-dev/vnt?logo=github&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC"/></a>
 <a href="https://github.com/vnt-dev/vnt/issues"><img src="https://img.shields.io/github/issues-raw/vnt-dev/vnt?logo=github&label=%E9%97%AE%E9%A2%98"></a>
 <a href="https://github.com/vnt-dev/vnt/discussions"><img src="https://img.shields.io/github/discussions/vnt-dev/vnt?logo=github&label=%E8%AE%A8%E8%AE%BA"></a>
 <a href="GitHub repo size"><img src="https://img.shields.io/github/repo-size/vnt-dev/vnt?logo=github&label=%E4%BB%93%E5%BA%93%E5%A4%A7%E5%B0%8F"></a>
