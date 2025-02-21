@@ -57,11 +57,11 @@ jobs:
           - TARGET: mipsel-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: openssl-vendored,ring-cipher,wss
-            STRIP: mipsel-linux-musl-strip
+            STRIP: mipsel-linux-muslsf-strip
           - TARGET: mips-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored,wss
-            STRIP: mips-linux-musl-strip
+            STRIP: mips-linux-muslsf-strip
           - TARGET: i686-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored,wss
