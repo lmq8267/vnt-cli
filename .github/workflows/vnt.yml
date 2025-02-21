@@ -118,6 +118,7 @@ jobs:
             esac
               echo "MUSL_URI=${MUSL_URI}" >> $GITHUB_ENV
               mkdir -p /opt/musl_gcc 
+              rustup set auto-self-update disable
               if [ "$TARGET" = "armv7-unknown-linux-gnueabihf" ] ; then
                 wget -q -c https://github.com/lmq8267/vnt/releases/download/1.2.1/armada370-gcc493_glibc220_hard-GPL.txz -P /opt/
                 tar -Jxf /opt/armada370-gcc493_glibc220_hard-GPL.txz -C /opt/
