@@ -55,11 +55,11 @@ jobs:
           - TARGET: mipsel-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: openssl-vendored,ring-cipher
-            STRIP: mipsel-linux-musl-strip
+            STRIP: mipsel-linux-muslsf-strip
           - TARGET: mips-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: openssl-vendored
-            STRIP: mips-linux-musl-strip
+            STRIP: mips-linux-muslsf-strip
           - TARGET: i686-unknown-linux-musl
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored
@@ -80,7 +80,8 @@ jobs:
         run: |
             case $TARGET in 
               mipsel-unknown-linux-musl)
-                MUSL_URI=mipsel-linux-musl-cross
+                MUSL_URI=mipsel-linux-muslsf-cross
+                URL=mipsel-linux-muslsf
                 ;;
               aarch64-unknown-linux-musl)
                 MUSL_URI=aarch64-linux-musl-cross
@@ -98,7 +99,8 @@ jobs:
                 MUSL_URI=arm-linux-musleabi-cross
                 ;;
               mips-unknown-linux-musl)
-                MUSL_URI=mips-linux-musl-cross
+                MUSL_URI=mips-linux-muslsf-cross
+                URL=mips-linux-muslsf
                 ;;
               i686-unknown-linux-musl)
                 MUSL_URI=i686-linux-musl-cross
@@ -118,8 +120,16 @@ jobs:
               sudo ln -s /opt/musl_gcc/$MUSL_URI/bin/*gcc /usr/bin/
               fi
             if [[ $TARGET == mips-unknown-linux-musl ]] || [[ $TARGET == mipsel-unknown-linux-musl ]] ; then
-            rustup install 1.72.1
-            rustup default 1.72.1
+              #rustup install 1.72.1
+              #rustup default 1.72.1
+              cd /opt/musl_gcc/${URL}-cross/lib/gcc/${URL}/11.2.1
+              cp libgcc_eh.a libunwind.a
+              rustup toolchain install nightly-x86_64-unknown-linux-gnu
+              rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+              RUST_LIB_SRC=$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/
+              if [[ -f $RUST_LIB_SRC/library/Cargo.lock && ! -f $RUST_LIB_SRC/Cargo.lock ]]; then 
+                 cp -f $RUST_LIB_SRC/library/Cargo.lock $RUST_LIB_SRC/Cargo.lock
+              fi
             fi
             sudo timedatectl set-timezone "Asia/Shanghai"
             cat >>~/.cargo/config <<EOF
@@ -148,13 +158,20 @@ jobs:
             linker = "arm-linux-musleabi-gcc"
             rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
             [target.mipsel-unknown-linux-musl]
-            linker = "mipsel-linux-musl-gcc"
-            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            linker = "mipsel-linux-muslsf-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols","-C", "link-arg=-static",
+            "-C", "relocation-model=static","-C", "link-arg=-no-pie","--cfg", "compiler_builtins_no_debug",
+            "-L", "/opt/musl_gcc/mipsel-linux-muslsf-cross/mipsel-linux-muslsf/lib",
+            "-L", "/opt/musl_gcc/mipsel-linux-muslsf-cross/lib/gcc/mipsel-linux-muslsf/11.2.1"]
             [target.mips-unknown-linux-musl]
-            linker = "mips-linux-musl-gcc"
-            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]  
+            linker = "mips-linux-muslsf-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols","-C", "link-arg=-static",
+            "-C", "relocation-model=static","-C", "link-arg=-no-pie","--cfg", "compiler_builtins_no_debug",
+            "-L", "/opt/musl_gcc/mips-linux-muslsf-cross/mips-linux-muslsf/lib",
+            "-L", "/opt/musl_gcc/mips-linux-muslsf-cross/lib/gcc/mips-linux-muslsf/11.2.1"]  
             EOF
       - name: 添加编译平台
+        if: ${{ ! startsWith(matrix.TARGET, 'mips') }}
         run: rustup target add $TARGET
       - name: 开始编译
         run: |
@@ -172,7 +189,13 @@ jobs:
           sed -i 's|en.to_string|zh.to_string|g' ./common/src/cli.rs
           sed -i 's|en-US|zh|g' ./common/src/cli.rs
           cmd=$(echo $cmd | tr -d ' ')
-          cargo build --package vnt-cli --release --target $TARGET --features ${FEATURES}${cmd}
+          if [[ $TARGET =~ ^mips.*$ ]]; then
+            cargo +nightly build --package vnt-cli --release --target $TARGET -Z build-std=std,panic_abort --features ${FEATURES}${cmd}
+          else
+            cargo build --package vnt-cli --release --target $TARGET --features ${FEATURES}${cmd}
+          fi
+          ldd ./target/$TARGET/release/vnt-cli || true
+          file ./target/$TARGET/release/vnt-cli || true
       - name: Install UPX
         uses: crazy-max/ghaction-upx@v3
         with:
