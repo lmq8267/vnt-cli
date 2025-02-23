@@ -143,7 +143,7 @@ jobs:
            cd /opt/vnt/rust
            rm -rf .cargo/config Cargo.lock
            #修改vnt-cli核心源码的版本
-           sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' Cargo.toml
+           #sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' Cargo.toml
            
            sed -i '0,/local_ipv4,/s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/' ./src/api/vnt_api.rs
            sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' ./src/api/vnt_api.rs
@@ -359,7 +359,6 @@ jobs:
       - name: 开始编译Linux平台
         if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         run: |
-          exit 1
           git clone https://github.com/vnt-dev/vnt -b ${{ needs.check.outputs.ver }} /opt/vnt
           cd /opt/vnt
           #修改为中文
