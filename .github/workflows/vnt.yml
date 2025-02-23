@@ -8,7 +8,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   TZ: Asia/Shanghai
-  
+permissions:
+  contents: write
+  actions: write  
 jobs:
  check:
   runs-on: ubuntu-latest
@@ -20,7 +22,7 @@ jobs:
     id: getversion
     run: |
       ver=`curl https://api.github.com/repos/vnt-dev/vnt/releases/latest | jq -r '.tag_name'`
-      cver=`curl https://api.github.com/repos/lmq8267/vnt-cli/releases/latest | jq -r '.tag_name'`
+      cver=`curl https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name'`
       echo "ver=${ver}" >> $GITHUB_OUTPUT
       echo "cver=${cver}" >> $GITHUB_OUTPUT
  build:
@@ -70,6 +72,13 @@ jobs:
             OS: ubuntu-latest
             FEATURES: ring-cipher,openssl-vendored,wss
             STRIP: x86_64-linux-musl-strip
+
+          - TARGET: Android-VntAPP
+            OS: ubuntu-latest
+            
+          - TARGET: Windows-VntAPP
+            OS: windows-latest
+            
     runs-on: ${{ matrix.OS }}
     env:
       NAME: vnt-cli_${{ matrix.TARGET }}
@@ -78,12 +87,179 @@ jobs:
       STRIP: ${{ matrix.STRIP }}
       FEATURES: ${{ matrix.FEATURES }}
     steps:
+      - name: 设置Flutter环境
+        if: ${{ endsWith(matrix.target, 'VntAPP') }}
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          #flutter-version: 3.27.4
+      - name: 设置JDK环境
+        if: ${{ startsWith(matrix.target, 'Android') }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: 设置NDK环境
+        if: ${{ startsWith(matrix.target, 'Android') }}
+        run: |
+           wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+           unzip -q android-ndk-r26d-linux.zip -d /opt/ndk
+      - name: 设置cargo环境
+        if: ${{ startsWith(matrix.target, 'Android') }}
+        run: |
+           rustup target add aarch64-linux-android
+           rustup target add armv7-linux-androideabi
+           rustup target add x86_64-linux-android
+           rustup target add i686-linux-android
+      - name: 构建 Windows vntAPP
+        if: ${{ startsWith(matrix.target, 'Windows') }}
+        shell: bash
+        run: |
+          git clone https://github.com/vnt-dev/VntApp -b flutter C:/vnt
+          cd C:/vnt
+          rm -f C:/vnt/rust/Cargo.lock
+          #修改vnt-cli核心源码版本
+          #sed -i 's/1\.2\.x/main/g' C:/vnt/rust/Cargo.toml
+          #修改APP内版本号
+          sed -i 's/1\.2\.11-预发布版/${{ needs.check.outputs.ver }}/g' C:/vnt/lib/about_page.dart
+          
+          sed -i '0,/local_ipv4,/s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/' C:/vnt/rust/src/api/vnt_api.rs
+          sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' C:/vnt/rust/src/api/vnt_api.rs
+          
+          flutter pub get
+          flutter upgrade
+          flutter build windows --release -v
+          echo "构建完成，开始列出生成的文件"
+          ls -l "C:/vnt/build/windows/x64/runner/Release"
+          cd C:/vnt/build/windows/x64/runner/Release
+          mkdir -p C:/opt/upx
+          "C:\Program Files\7-Zip\7z.exe" a C:/opt/upx/Windows-VntAPP.zip C:/vnt/build/windows/x64/runner/Release/*
+
+          
+      - name: 构建安卓so库
+        if: ${{ startsWith(matrix.target, 'Android') }}
+        run: |
+           git clone https://github.com/vnt-dev/VntApp -b flutter /opt/vnt
+           cd /opt/vnt/rust
+           rm -rf .cargo/config Cargo.lock
+           #修改vnt-cli核心源码的版本
+           sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' Cargo.toml
+           
+           sed -i '0,/local_ipv4,/s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/' ./src/api/vnt_api.rs
+           sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' ./src/api/vnt_api.rs
+           
+           export PATH=/opt/ndk/android-ndk-r26d:/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH  
+           cat >>./.cargo/config <<EOF
+            [target.armv7-linux-androideabi]
+            ar = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+            linker = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+
+            [target.aarch64-linux-android]
+            ar = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+            linker = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+
+            [target.i686-linux-android]
+            ar = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+            linker = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+
+            [target.x86_64-linux-android]
+            ar = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+            linker = "/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"
+           EOF
+           
+           cargo build --target aarch64-linux-android --release
+           mv -f /opt/vnt/rust/target/aarch64-linux-android/release/*.so /opt/vnt/android/app/src/main/jniLibs/arm64-v8a/librust_lib_vnt_app.so
+          
+           cargo clean
+           cargo build --target x86_64-linux-android --release
+           mv -f /opt/vnt/rust/target/x86_64-linux-android/release/*.so /opt/vnt/android/app/src/main/jniLibs/x86_64/librust_lib_vnt_app.so
+          
+           cargo clean
+           export CC_i686_linux_android="/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+           export CC="/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+           cargo build --target i686-linux-android --release 
+           mv -f /opt/vnt/rust/target/i686-linux-android/release/*.so /opt/vnt/android/app/src/main/jniLibs/x86/librust_lib_vnt_app.so
+
+           cargo clean
+           export CC_armv7_linux_androideabi="/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+           export CC="/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+           cargo build --target armv7-linux-androideabi --release 
+           mv -f /opt/vnt/rust/target/armv7-linux-androideabi/release/*.so /opt/vnt/android/app/src/main/jniLibs/armeabi-v7a/librust_lib_vnt_app.so
+      - name: 构建安卓APK
+        if: ${{ startsWith(matrix.target, 'Android') }}
+        run: |
+         cd /opt/vnt
+         
+         sudo apt install ninja-build libgtk-3-dev
+         #删除android-35
+         #rm -rf /usr/local/lib/android/sdk/platforms/android-35 || true
+         #rm -rf /usr/local/lib/android/sdk/build-tools/35.0.0 || true
+         #rm -rf /usr/local/lib/android/sdk/build-tools/35.0.1 || true
+         #设置路径安装特地版本tool
+         export PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin
+         sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+         #sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
+         #sdkmanager --uninstall "platforms;android-35" "build-tools;35.0.0" "build-tools;35.0.1" "platforms;android-35-ext14" || true
+         #export ANDROID_HOME=/usr/local/lib/android/sdk
+         #export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+         #export PATH=$ANDROID_HOME/platforms/android-34:$PATH
+          
+         #修改APP内版本
+         sed -i "s/1.2.11-预发布版/${{ needs.check.outputs.ver }}/g" ./lib/about_page.dart
+         sed -i "s|1.2.13|${{ needs.check.outputs.ver }}|" ./android/app/build.gradle
+
+         #跟随flutter版本依赖版本的更新迭代版本也相应升级
+         sed -i "s|1.7.10|1.9.0|" ./android/settings.gradle
+         sed -i "s|7.3.0|8.1.0|" ./android/settings.gradle
+         sed -i 's|7.6.3|8.1.1|' ./android/gradle/wrapper/gradle-wrapper.properties
+         sed -i 's|7.3|8.1|' ./rust_builder/android/build.gradle
+         sed -i 's|19|21|' ./rust_builder/android/build.gradle
+         sed -i 's|flutter.compileSdkVersion|35|' ./android/app/build.gradle
+         sed -i 's|flutter.targetSdkVersion|35|' ./android/app/build.gradle
+         echo '
+          buildscript {
+            ext.kotlin_version = "1.9.0"  
+            repositories {
+              google()
+              mavenCentral()
+            }
+            dependencies {
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21"
+              classpath "com.android.tools.build:gradle:8.1.0"  
+            }
+          }
+          ' >> ./android/build.gradle
+          
+         echo "开始构建"
+         flutter clean
+         flutter doctor -v
+         flutter pub get
+         #flutter upgrade
+         flutter build apk --release -v
+         find /opt/vnt -type f -name "*.apk"
+         
+         mkdir -p /opt/vntAPP
+         mv -f /opt/vnt/build/app/outputs/flutter-apk/app-release.apk /opt/vntAPP/app-release.apk
+         
+         cd /opt/vntAPP
+         #生成签名文件keystore.jks 签名密码设置为password 可以自定义修改密码
+         password=password
+         keytool -genkey -v -keystore keystore.jks -storepass $password -alias key -keypass $password -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
+         #启用谷歌v1 v2 v3 v4 签名方式同时签名
+         /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks keystore.jks --ks-key-alias key --ks-pass pass:$password --key-pass pass:$password --out vntApp-android.apk --in app-release.apk --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled true
+         rm app-release.apk
+         mkdir -p /opt/upx
+         cp -f vntApp-android.apk /opt/upx/Android-VntAPP.apk
+         
+         echo "build_time=$(date '+%Y年%m月%d日%H:%M:%S' | jq -sRr @uri)" >> $GITHUB_ENV
       - name: Install UPX
+        if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         uses: crazy-max/ghaction-upx@v3
         with:
           version: latest
           install-only: true
       - name: 设置编译环境
+        if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         run: |
             case $TARGET in 
               mipsel-unknown-linux-musl)
@@ -178,10 +354,12 @@ jobs:
             "-L", "/opt/musl_gcc/mips-linux-muslsf-cross/lib/gcc/mips-linux-muslsf/11.2.1"] 
             EOF
       - name: 添加编译平台
-        if: ${{ ! startsWith(matrix.TARGET, 'mips') }}
+        if: ${{ ! startsWith(matrix.TARGET, 'mips') && !endsWith(matrix.target, 'VntAPP') }}
         run: rustup target add $TARGET
-      - name: 开始编译
+      - name: 开始编译Linux平台
+        if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         run: |
+          exit 1
           git clone https://github.com/vnt-dev/vnt -b ${{ needs.check.outputs.ver }} /opt/vnt
           cd /opt/vnt
           #修改为中文
@@ -194,7 +372,8 @@ jobs:
           fi
           ldd ./target/$TARGET/release/vnt-cli || true
           file ./target/$TARGET/release/vnt-cli || true
-      - name: 打包压缩
+      - name: Linux打包压缩
+        if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         run: |
           mkdir -p /opt/upx
           if [ "$TARGET" = "armv7-unknown-linux-gnueabihf" ] ; then
@@ -224,10 +403,13 @@ jobs:
             fi
           fi
           echo "build_time=$(date '+%Y年%m月%d日%H:%M:%S' | jq -sRr @uri)" >> $GITHUB_ENV
+      - name: 设置上传路径
+        run: echo "UPLOAD_PATH=$(if [[ $RUNNER_OS == 'Linux' ]]; then echo '/opt/upx/*'; else echo 'C:/opt/upx/*'; fi)" >> $GITHUB_ENV
+        shell: bash
       - name: 发布
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.c8 }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           body: |
            > ### ![](https://img.shields.io/badge/%E7%BC%96%E8%AF%91%E6%97%B6%E9%97%B4-${{ env.build_time }}-8267?logo=github&labelColor=%E9%A1%BB)![](https://img.shields.io/github/downloads/${{ github.repository }}/${{ needs.check.outputs.ver }}/total?label=%E4%B8%8B%E8%BD%BD%E6%AC%A1%E6%95%B0&logo=github)![](https://img.shields.io/docker/image-size/lmq8267/vnt/${{ needs.check.outputs.ver }}?label=%E9%95%9C%E5%83%8F%E5%A4%A7%E5%B0%8F&link=https%3A%2F%2Fhub.docker.com%2Fr%2Flmq8267%2Fvnt&logo=docker)
            
@@ -239,15 +421,8 @@ jobs:
            [官方更新说明](https://github.com/vnt-dev/vnt/releases)
            
           tag_name: ${{ needs.check.outputs.ver }}
-          files: |
-              /opt/upx/*
-      - 
-       name: 删除工作流
-       uses: GitRML/delete-workflow-runs@main
-       with:
-        token: ${{ secrets.c8 }}
-        retain_days: 2
-        keep_minimum_runs: 1
+          files: ${{ env.UPLOAD_PATH }}
+      
  keepalive-workflow:
     # github超过60天未提交将自动停止工作流
     name: 工作流保活 
@@ -256,6 +431,12 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+      - name: 删除工作流
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+         token: ${{ secrets.GITHUB_TOKEN }}
+         retain_days: 0
+         keep_minimum_runs: 0
       - uses: gautamkrishnar/keepalive-workflow@v2
         #with:
           #use_api: true
