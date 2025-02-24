@@ -354,6 +354,7 @@ jobs:
         run: |
           git clone -b ${{ env.branch }} https://github.com/vnt-dev/vnt /opt/vnt
           cd /opt/vnt
+          rm Cargo.lock
           #if [[ $TARGET == aarch64-unknown-linux-musl ]] || [[ $TARGET == armv7-unknown-linux-musleabi ]] || [[ $TARGET == arm-unknown-linux-musleabi ]] ; then
           #sed -i '/let path = std::env::current_exe()/d' ./vnt-cli/src/main.rs
           #sed -i '/.expect("current_exe error")/d' ./vnt-cli/src/main.rs
