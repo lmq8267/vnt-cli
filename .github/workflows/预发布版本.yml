@@ -231,7 +231,7 @@ jobs:
          flutter clean
          flutter doctor -v
          flutter pub get
-         flutter upgrade
+         #flutter upgrade
          flutter build apk --release -v
          find /opt/vnt -type f -name "*.apk"
          
