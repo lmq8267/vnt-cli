@@ -142,7 +142,8 @@ jobs:
            cd /opt/vnt/rust
            rm -rf .cargo/config Cargo.lock
            #修改vnt-cli核心源码的版本
-           sed -i "s|1.2.x|${{ github.event.inputs.branch }}|" Cargo.toml
+           #sed -i "s|1.2.x|${{ github.event.inputs.branch }}|" Cargo.toml
+           sed -i 's|branch = "1.2.x"|rev = "d5e10a8"|' Cargo.toml
            
            sed -i '0,/local_ipv4,/s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/' ./src/api/vnt_api.rs
            sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' ./src/api/vnt_api.rs
