@@ -362,6 +362,7 @@ jobs:
           git clone https://github.com/vnt-dev/vnt -b ${{ needs.check.outputs.ver }} /opt/vnt
           cd /opt/vnt
           #修改为中文
+          rm Cargo.lock
           sed -i 's|en.to_string|zh.to_string|g' ./common/src/cli.rs
           sed -i 's|en-US|zh|g' ./common/src/cli.rs
           if [[ $TARGET =~ ^mips.*$ ]]; then
