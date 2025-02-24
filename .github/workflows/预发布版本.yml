@@ -91,7 +91,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          #flutter-version: 3.27.4
+          flutter-version: 3.22.0
       - name: 设置JDK环境
         if: ${{ startsWith(matrix.target, 'Android') }}
         uses: actions/setup-java@v4
@@ -195,7 +195,7 @@ jobs:
          #rm -rf /usr/local/lib/android/sdk/build-tools/35.0.1 || true
          #设置路径安装特地版本tool
          export PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin
-         sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+         #sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
          #sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
          #sdkmanager --uninstall "platforms;android-35" "build-tools;35.0.0" "build-tools;35.0.1" "platforms;android-35-ext14" || true
          #export ANDROID_HOME=/usr/local/lib/android/sdk
@@ -207,23 +207,22 @@ jobs:
          sed -i "s|1.2.13|${{ github.event.inputs.tag }}|" ./android/app/build.gradle
 
          #跟随flutter版本依赖版本的更新迭代版本也相应升级
-         sed -i "s|1.7.10|1.9.0|" ./android/settings.gradle
-         sed -i "s|7.3.0|8.1.0|" ./android/settings.gradle
-         sed -i 's|7.6.3|8.1.1|' ./android/gradle/wrapper/gradle-wrapper.properties
-         sed -i 's|7.3|8.1|' ./rust_builder/android/build.gradle
-         sed -i 's|19|21|' ./rust_builder/android/build.gradle
-         sed -i 's|flutter.compileSdkVersion|35|' ./android/app/build.gradle
-         sed -i 's|flutter.targetSdkVersion|35|' ./android/app/build.gradle
+         #sed -i "s|1.7.10|1.9.0|" ./android/settings.gradle
+         #sed -i "s|7.3.0|8.1.0|" ./android/settings.gradle
+         sed -i 's|7.6.3|8.0|' ./android/gradle/wrapper/gradle-wrapper.properties
+         #sed -i 's|7.3|8.1|' ./rust_builder/android/build.gradle
+         #sed -i 's|19|21|' ./rust_builder/android/build.gradle
+         sed -i 's|flutter.compileSdkVersion|34|' ./android/app/build.gradle
+         sed -i 's|flutter.targetSdkVersion|34|' ./android/app/build.gradle
+         sed -i 's|flutter.minSdkVersion|21|' ./android/app/build.gradle
          echo '
           buildscript {
-            ext.kotlin_version = "1.9.0"  
             repositories {
               google()
               mavenCentral()
             }
             dependencies {
-              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21"
-              classpath "com.android.tools.build:gradle:8.1.0"  
+              classpath "com.android.tools.build:gradle:7.3.0"  
             }
           }
           ' >> ./android/build.gradle
