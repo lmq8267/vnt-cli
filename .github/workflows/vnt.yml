@@ -255,7 +255,7 @@ jobs:
         if: ${{ !endsWith(matrix.target, 'VntAPP') }}
         uses: crazy-max/ghaction-upx@v3
         with:
-          version: latest
+          version: v4.2.4
           install-only: true
       - name: 设置编译环境
         if: ${{ !endsWith(matrix.target, 'VntAPP') }}
